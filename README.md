@@ -280,4 +280,4 @@ SpringBoot / Python 全流程生成、验证码修改、修复闭环。
 
 ## 📄 License
 
-MIT License. 本项目为个人探索 / 学习用途，生成的代码仅用于演示。
+MIT License. 本项目为个人探索 / 学习用途。
