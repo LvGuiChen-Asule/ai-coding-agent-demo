@@ -129,8 +129,8 @@ Agent 根据任务自主选择工具，工具统一注册、调用并记录日�
 ### 1. 安装依赖
 
 ```bash
-git clone https://github.com/<your-name>/ai-coding-agent-workflow-demo.git
-cd ai-coding-agent-workflow-demo
+git clone https://github.com/LvGuiChen-Asule/ai-coding-agent-demo.git
+cd ai-coding-agent-demo
 
 python -m pip install -r requirements.txt
 ```
@@ -281,4 +281,3 @@ SpringBoot / Python 全流程生成、验证码修改、修复闭环。
 ## 📄 License
 
 MIT License. 本项目为个人探索 / 学习用途，生成的代码仅用于演示。
-
