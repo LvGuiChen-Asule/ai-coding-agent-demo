@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Coding Agent Demo</title>
+  <style>
+    :root {
+      --bg: #0f1117; --panel: #171a23; --panel2: #1d2130; --border: #2a2f42;
+      --text: #e6e9f2; --muted: #8b92a8; --accent: #6366f1; --green: #34d399;
+      --red: #f87171; --yellow: #fbbf24; --blue: #60a5fa; --cyan: #22d3ee;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--text); font: 14px/1.6 "Segoe UI",
+      "Microsoft YaHei", sans-serif; padding: 24px; min-height: 100vh;
+    }
+    .wrap { max-width: 960px; margin: 0 auto; }
+    h1 { font-size: 22px; margin-bottom: 4px; }
+    .sub { color: var(--muted); margin-bottom: 20px; }
+    .card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 18px; margin-bottom: 18px; }
+    textarea {
+      width: 100%; min-height: 76px; background: var(--panel2); color: var(--text);
+      border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-size: 14px; resize: vertical;
+    }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; align-items: center; }
+    select, input[type=text] {
+      background: var(--panel2); color: var(--text); border: 1px solid var(--border);
+      border-radius: 8px; padding: 8px 10px; font-size: 13px;
+    }
+    .btn {
+      background: var(--accent); color: #fff; border: none; border-radius: 8px;
+      padding: 9px 18px; font-size: 14px; cursor: pointer;
+    }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .chip {
+      background: var(--panel2); border: 1px solid var(--border); border-radius: 999px;
+      padding: 5px 12px; font-size: 12px; cursor: pointer; color: var(--muted);
+    }
+    .chip:hover { color: var(--text); border-color: var(--accent); }
+    .stage { padding: 9px 12px; border-left: 3px solid var(--border); margin-bottom: 6px; background: var(--panel2); border-radius: 0 8px 8px 0; }
+    .stage b { font-weight: 600; }
+    .stage .agent { color: var(--muted); font-size: 12px; margin-left: 8px; }
+    .stage .msg { margin-top: 2px; color: var(--text); font-size: 13px; }
+    .s-plan { border-color: var(--blue); } .s-codegen { border-color: var(--green); }
+    .s-fileop, .s-modify { border-color: var(--yellow); } .s-test { border-color: var(--cyan); }
+    .s-fix { border-color: var(--red); } .s-reflect { border-color: var(--accent); }
+    .s-start { border-color: var(--muted); } .s-done { border-color: var(--green); }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { color: var(--muted); font-weight: 600; }
+    .sev-critical { color: var(--red); } .sev-high { color: #fb923c; }
+    .sev-medium { color: var(--yellow); } .sev-low { color: var(--blue); }
+    .ok { color: var(--green); } .fail { color: var(--red); }
+    .score { font-size: 40px; font-weight: 700; color: var(--accent); }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .file-item { font-family: Consolas, monospace; font-size: 12px; color: var(--muted); padding: 3px 0; }
+    #loading { display: none; color: var(--muted); }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>AI Coding Agent Demo</h1>
+    <p class="sub">基于 Agent Workflow 的智能代码开发助手 —— 需求理解 → 任务规划 → 代码生成 → 文件操作 → 测试验证 → 自我优化</p>
+
+    <div class="card">
+      <textarea id="requirement" placeholder="输入自然语言需求，例如：帮我创建一个SpringBoot用户登录模块"></textarea>
+      <div class="row">
+        <button class="chip" onclick="fill('帮我创建一个SpringBoot用户登录模块')">SpringBoot 登录模块</button>
+        <button class="chip" onclick="fill('创建一个Python FastAPI用户接口')">Python FastAPI</button>
+        <button class="chip" onclick="fill('创建一个Node.js Express用户接口')">Node.js API</button>
+        <button class="chip" onclick="fill('修改登录逻辑，增加验证码校验')">增加验证码</button>
+      </div>
+      <div class="row">
+        <select id="provider">
+          <option value="mock">LLM Provider: mock（离线）</option>
+          <option value="openai">openai</option>
+          <option value="qwen">qwen（通义千问）</option>
+        </select>
+        <select id="stack">
+          <option value="">技术栈: 自动识别</option>
+          <option value="springboot">springboot</option>
+          <option value="python">python</option>
+          <option value="node">node</option>
+        </select>
+        <input type="text" id="workspace" value="./demo_output" placeholder="输出目录">
+        <label style="color:var(--muted);font-size:13px"><input type="checkbox" id="demoBug"> 注入 Bug 演示修复闭环</label>
+        <button class="btn" id="runBtn" onclick="run()">运行工作流</button>
+      </div>
+      <div id="loading">⏳ Agent 正在工作：规划 → 生成 → 测试 → 审查...</div>
+    </div>
+
+    <div id="result" class="hidden"></div>
+  </div>
+
+  <script>
+    function fill(text) { document.getElementById('requirement').value = text; }
+
+    async function run() {
+      const btn = document.getElementById('runBtn');
+      btn.disabled = true;
+      document.getElementById('loading').style.display = 'block';
+      document.getElementById('result').classList.add('hidden');
+      const body = {
+        requirement: document.getElementById('requirement').value.trim(),
+        provider: document.getElementById('provider').value,
+        stack: document.getElementById('stack').value || null,
+        workspace: document.getElementById('workspace').value || './demo_output',
+        demo_bug: document.getElementById('demoBug').checked,
+      };
+      try {
+        const resp = await fetch('/api/workflow/run', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+        });
+        const data = await resp.json();
+        render(data);
+      } catch (err) {
+        alert('运行失败：' + err.message);
+      } finally {
+        btn.disabled = false;
+        document.getElementById('loading').style.display = 'none';
+      }
+    }
+
+    function render(d) {
+      const el = document.getElementById('result');
+      el.classList.remove('hidden');
+      let html = '';
+
+      html += '<div class="card"><h2 style="font-size:16px;margin-bottom:12px">执行记录</h2>';
+      html += (d.events || []).map(e =>
+        '<div class="stage s-' + e.stage + '"><b>[' + e.stage.toUpperCase() + ']</b>' +
+        '<span class="agent">' + e.agent + '</span><div class="msg">' + esc(e.message) + '</div></div>'
+      ).join('');
+      html += '</div>';
+
+      const test = d.test_report || {};
+      html += '<div class="card"><h2 style="font-size:16px;margin-bottom:12px">测试报告</h2>';
+      html += '<div class="' + (test.ok ? 'ok' : 'fail') + '" style="margin-bottom:8px">' +
+        (test.ok ? '✅ 测试通过' : '❌ 测试失败') + '</div>';
+      html += '<table><tr><th>检查项</th><th>结果</th><th>详情</th></tr>';
+      (test.checks || []).forEach(c => {
+        html += '<tr><td>' + esc(c.name) + '</td><td class="' + (c.ok ? 'ok' : 'fail') + '">' +
+          (c.ok ? '通过' : '失败') + '</td><td style="color:var(--muted)">' + esc(String(c.detail || '')) + '</td></tr>';
+      });
+      html += '</table></div>';
+
+      const review = d.review_report || {};
+      html += '<div class="card"><h2 style="font-size:16px;margin-bottom:12px">Code Review 报告</h2>';
+      html += '<div class="grid"><div><div class="score">' + review.score + '</div><div style="color:var(--muted)">/100</div></div>';
+      html += '<div style="color:var(--muted)">' + esc(review.summary || '') + '</div></div>';
+      html += '<table style="margin-top:12px"><tr><th>级别</th><th>文件</th><th>问题</th><th>建议</th></tr>';
+      (review.issues || []).forEach(i => {
+        html += '<tr><td class="sev-' + esc(i.severity) + '">' + esc(i.severity) + '</td><td>' +
+          esc(i.file) + '</td><td>' + esc(i.title) + '</td><td style="color:var(--muted)">' + esc(i.suggestion) + '</td></tr>';
+      });
+      if (!(review.issues || []).length) html += '<tr><td colspan="4" style="color:var(--muted)">未发现问题</td></tr>';
+      html += '</table></div>';
+
+      html += '<div class="card"><h2 style="font-size:16px;margin-bottom:12px">生成文件（' +
+        (d.generated_files || []).length + ' 个）</h2>';
+      (d.generated_files || []).forEach(f => {
+        html += '<div class="file-item">📄 ' + esc(f.path) + '</div>';
+      });
+      html += '</div>';
+      el.innerHTML = html;
+    }
+
+    function esc(s) {
+      return String(s).replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[c]));
+    }
+  </script>
+</body>
+</html>
+

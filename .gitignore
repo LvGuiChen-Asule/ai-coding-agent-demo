@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+
+# 环境变量（包含密钥，切勿提交）
+.env
+
+# 运行期产物
+demo_output/
+work/
+outputs/
+.agent_backups/
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# 日志
+*.log
+

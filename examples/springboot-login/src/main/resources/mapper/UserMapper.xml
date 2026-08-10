@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.userlogin.mapper.UserMapper">
+
+    <select id="findByUsername" resultType="User">
+        SELECT id, username, password, email, created_at
+        FROM sys_user
+        WHERE username = #{username}
+    </select>
+
+    <insert id="insert" parameterType="User" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_user (username, password, email, created_at)
+        VALUES (#{username}, #{password}, #{email}, #{createdAt})
+    </insert>
+
+    <select id="searchByKeyword" resultType="User">
+        SELECT id, username, password, email, created_at
+        FROM sys_user
+        WHERE username LIKE '%${keyword}%'
+    </select>
+</mapper>

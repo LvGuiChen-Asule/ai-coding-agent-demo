@@ -1,0 +1,9 @@
+# Web 服务层（核心 Agent 引擎仅依赖 Python 标准库）
+fastapi>=0.110
+uvicorn[standard]>=0.29
+pydantic>=2.6
+
+# 如使用 OpenAI / 通义千问 Provider，任选其一（也可不装，SDK 请求走标准库）
+# openai>=1.30
+# dashscope>=1.20
+
